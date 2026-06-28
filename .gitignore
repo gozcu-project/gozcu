@@ -24,3 +24,6 @@ frontend/dist/
 # IDE
 .idea/
 *.iml
+/gozcu-gate
+/gozcu-netmon
+deploy/docker/app.jar

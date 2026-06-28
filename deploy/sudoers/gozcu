@@ -1,0 +1,3 @@
+# Gözcü - kritik komut onay sistemi
+# Kullanıcı SADECE gozcu-gate'i root olarak çalıştırabilir, başka hiçbir komuta sudo izni yok.
+gozcu ALL=(root) NOPASSWD: /opt/gozcu/bin/gozcu-gate
