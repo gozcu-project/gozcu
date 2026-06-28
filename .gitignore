@@ -1,0 +1,26 @@
+# Go
+/cmd/*/gozcu-gate
+/cmd/*/gozcu-netmon
+*.test
+
+# Java / Gradle
+backend/.gradle/
+backend/build/
+backend/local.env
+backend/run-local.sh
+
+# Angular / Node
+frontend/node_modules/
+frontend/dist/
+
+# Sertifikalar ve şifreler — ASLA commit edilmeyecek
+*.key
+*.p12
+*.crt
+*.csr
+*.srl
+**/.env
+
+# IDE
+.idea/
+*.iml
