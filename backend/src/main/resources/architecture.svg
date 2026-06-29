@@ -1,0 +1,77 @@
+<svg viewBox="0 0 920 560" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    text { font-family: Arial, Helvetica, sans-serif; fill: #1e293b; }
+    .title { font-size: 15px; font-weight: 700; }
+    .sub { font-size: 12px; }
+    .label { font-size: 12px; fill: #475569; }
+    .box { stroke-width: 2; rx: 10; ry: 10; }
+    .neutral { fill: #f1f5f9; stroke: #334155; }
+    .future { fill: #f8fafc; stroke: #94a3b8; stroke-dasharray: 6,4; }
+    .future-text { fill: #64748b; }
+    .arrow { stroke: #64748b; stroke-width: 2; fill: none; }
+    .arrow-future { stroke: #94a3b8; stroke-width: 2; fill: none; stroke-dasharray: 6,4; }
+  </style>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-future" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- A: Kullanıcı -->
+  <rect class="box neutral" x="40" y="40" width="220" height="70" rx="10"/>
+  <text class="title" x="150" y="68" text-anchor="middle">Kullanıcı</text>
+  <text class="sub" x="150" y="88" text-anchor="middle">sudo systemctl restart nginx</text>
+
+  <!-- B: sudoers + bashrc -->
+  <rect class="box neutral" x="40" y="170" width="220" height="70" rx="10"/>
+  <text class="title" x="150" y="198" text-anchor="middle">sudoers + .bashrc</text>
+  <text class="sub" x="150" y="218" text-anchor="middle">tek izinli yol: gozcu-gate</text>
+
+  <!-- C: gozcu-gate -->
+  <rect class="box neutral" x="40" y="300" width="220" height="80" rx="10"/>
+  <text class="title" x="150" y="332" text-anchor="middle">gozcu-gate</text>
+  <text class="sub" x="150" y="352" text-anchor="middle">Go, native binary</text>
+  <text class="sub" x="150" y="368" text-anchor="middle">(host'ta çalışır)</text>
+
+  <!-- D: Backend -->
+  <rect class="box neutral" x="410" y="280" width="270" height="90" rx="10"/>
+  <text class="title" x="545" y="310" text-anchor="middle">Spring Boot Backend</text>
+  <text class="sub" x="545" y="330" text-anchor="middle">mTLS (client-auth: need)</text>
+  <text class="sub" x="545" y="348" text-anchor="middle">Risk Skoru · Audit · Fleet</text>
+
+  <!-- E: Postgres -->
+  <rect class="box neutral" x="410" y="450" width="270" height="60" rx="10"/>
+  <text class="title" x="545" y="478" text-anchor="middle">PostgreSQL 18</text>
+  <text class="sub" x="545" y="496" text-anchor="middle">approval_requests · audit_logs · command_policies</text>
+
+  <!-- F: Angular (planlanan) -->
+  <rect class="box future" x="730" y="280" width="160" height="90" rx="10"/>
+  <text class="title future-text" x="810" y="312" text-anchor="middle">Angular UI</text>
+  <text class="sub future-text" x="810" y="332" text-anchor="middle">(planlanan)</text>
+
+  <!-- G: netmon (planlanan) -->
+  <rect class="box future" x="40" y="450" width="220" height="60" rx="10"/>
+  <text class="title future-text" x="150" y="478" text-anchor="middle">gozcu-netmon</text>
+  <text class="sub future-text" x="150" y="496" text-anchor="middle">eBPF / CO-RE (planlanan)</text>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M150,110 L150,170" marker-end="url(#arrow)"/>
+  <path class="arrow" d="M150,240 L150,300" marker-end="url(#arrow)"/>
+
+  <path class="arrow" d="M260,340 L410,325" marker-end="url(#arrow)"/>
+  <text class="label" x="335" y="318" text-anchor="middle">mTLS</text>
+
+  <path class="arrow" d="M545,370 L545,450" marker-end="url(#arrow)"/>
+  <text class="label" x="565" y="415" text-anchor="middle">JDBC</text>
+
+  <path class="arrow-future" d="M680,325 L730,325" marker-end="url(#arrow-future)"/>
+  <text class="label" x="705" y="305" text-anchor="middle" font-size="10">WebSocket</text>
+
+  <path class="arrow-future" d="M260,480 L410,355" marker-end="url(#arrow-future)"/>
+  <text class="label" x="300" y="430" text-anchor="middle" font-size="10">mTLS (planlanan)</text>
+
+</svg>

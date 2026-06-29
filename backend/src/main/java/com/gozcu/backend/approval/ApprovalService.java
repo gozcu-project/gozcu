@@ -79,6 +79,10 @@ public class ApprovalService {
         deferred.onTimeout(() -> {
             waiters.remove(id);
             ApprovalRequest latest = repository.findById(id).orElseThrow();
+            if (latest.getStatus() == ApprovalStatus.PENDING) {
+                auditService.log(latest.getId(), "TIMEOUT", "system",
+                        latest.getHostName() + " - " + latest.getCommand() + " [risk=" + latest.getRiskLevel() + "]");
+            }
             deferred.setResult(ResponseEntity.ok(toDto(latest)));
         });
 
