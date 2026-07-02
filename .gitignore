@@ -27,3 +27,6 @@ frontend/dist/
 /gozcu-gate
 /gozcu-netmon
 deploy/docker/app.jar
+internal/netmon/bpf/vmlinux.h
+gozcu-netmon
+internal/netmon/bpf/vmlinux.h
