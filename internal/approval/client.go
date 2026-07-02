@@ -42,9 +42,6 @@ func (c *Client) waitOnce(id int64) (*Response, error) {
 	return decode(resp)
 }
 
-// WaitForResolution, backend'deki hibrit 30+30sn bekleme mekanizmasını
-// client tarafında tamamlar: her tur en fazla 30sn bekler, hâlâ PENDING ise
-// bir tur daha dener.
 func (c *Client) WaitForResolution(id int64, maxRounds int) (*Response, error) {
 	var last *Response
 	for i := 0; i < maxRounds; i++ {
@@ -53,7 +50,7 @@ func (c *Client) WaitForResolution(id int64, maxRounds int) (*Response, error) {
 			return nil, err
 		}
 		last = resp
-		if resp.Status != "PENDING" {
+		if resp.Status.IsTerminal() {
 			return resp, nil
 		}
 	}

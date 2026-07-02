@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gozcu-project/gozcu/internal/approval"
+	"github.com/gozcu-project/gozcu/internal/approval/strategy"
 	"github.com/gozcu-project/gozcu/internal/config"
-	"github.com/gozcu-project/gozcu/internal/executor"
 	"github.com/gozcu-project/gozcu/internal/identity"
 	"github.com/gozcu-project/gozcu/internal/tlsutil"
 )
@@ -36,7 +36,7 @@ func main() {
 		fail("onay isteği oluşturulamadı: %v", err)
 	}
 
-	if resp.Status == "APPROVED" && resp.RiskLevel == "LOW" {
+	if resp.Status == approval.StatusApproved && resp.RiskLevel == "LOW" {
 		fmt.Println("Düşük riskli komut, otomatik onaylandı.")
 	} else {
 		fmt.Printf("Onay isteği gönderildi (ID: %d). Bekleniyor...\n", resp.ID)
@@ -47,18 +47,13 @@ func main() {
 		fail("onay beklenirken hata: %v", err)
 	}
 
-	switch resp.Status {
-	case "APPROVED":
-		if resp.RiskLevel != "LOW" {
-			fmt.Println("Onaylandı. Komut çalıştırılıyor...")
-		}
-		if err := executor.Run(args); err != nil {
-			fail("komut çalıştırılamadı: %v", err)
-		}
-	case "REJECTED":
-		fail("İstek reddedildi (onaylayan: %s).", resp.ResolvedBy)
-	default:
-		fail("Onay zaman aşımına uğradı (durum: %s). Lütfen tekrar deneyin.", resp.Status)
+	strat, err := strategy.Resolve(resp.Status)
+	if err != nil {
+		fail("%v", err)
+	}
+
+	if err := strat.Execute(resp, args); err != nil {
+		fail("%v", err)
 	}
 }
 
