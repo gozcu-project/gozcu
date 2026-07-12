@@ -10,14 +10,19 @@ import (
 )
 
 type alertPayload struct {
-	PID     uint32 `json:"pid"`
-	UID     uint32 `json:"uid"`
-	Comm    string `json:"comm"`
-	DestIP  string `json:"destIp"`
-	DstPort uint16 `json:"dstPort"`
-	Proto   string `json:"proto"`
+	PID           uint32 `json:"pid"`
+	UID           uint32 `json:"uid"`
+	Comm          string `json:"comm"`
+	DestIP        string `json:"destIp"`
+	DstPort       uint16 `json:"dstPort"`
+	Proto         string `json:"proto"`
+	Reason        string `json:"reason"`
+	PolicyVersion uint32 `json:"policyVersion"`
 }
 
+// AlertHandler — BLOCK event'ını mTLS üzerinden Spring Boot'a bildirir.
+// Gönderme başarısızlığı enforcement'ı etkilemez —
+// hata döner, Chain devam eder.
 type AlertHandler struct {
 	client  *http.Client
 	baseURL string
@@ -27,14 +32,16 @@ func NewAlertHandler(client *http.Client, baseURL string) *AlertHandler {
 	return &AlertHandler{client: client, baseURL: baseURL}
 }
 
-func (h *AlertHandler) Handle(conn model.Connection) error {
+func (h *AlertHandler) Handle(event model.BlockEvent) error {
 	payload := alertPayload{
-		PID:     conn.PID,
-		UID:     conn.UID,
-		Comm:    conn.Comm,
-		DestIP:  conn.DestIP.String(),
-		DstPort: conn.DstPort,
-		Proto:   conn.Proto.String(),
+		PID:           event.Attempt.PID,
+		UID:           event.Attempt.UID,
+		Comm:          event.Attempt.Comm,
+		DestIP:        event.Attempt.DestIP.String(),
+		DstPort:       event.Attempt.DstPort,
+		Proto:         event.Attempt.Proto.String(),
+		Reason:        event.Reason.String(),
+		PolicyVersion: event.PolicyVersion,
 	}
 
 	body, err := json.Marshal(payload)

@@ -3,28 +3,23 @@ package dispatcher
 import (
 	"github.com/gozcu-project/gozcu/internal/netmon/handler"
 	"github.com/gozcu-project/gozcu/internal/netmon/model"
-	"github.com/gozcu-project/gozcu/internal/netmon/policy"
 )
 
+// Dispatcher — kernel'den gelen BlockEvent'ı handler zincirine dağıtır.
+// Observer Pattern: event gelince zincir çalışır.
+// Dispatcher policy kararı vermez — sadece event iletir.
 type Dispatcher struct {
-	chains map[policy.Decision]*handler.Chain
+	chain *handler.Chain
 }
 
-func New() *Dispatcher {
-	return &Dispatcher{
-		chains: make(map[policy.Decision]*handler.Chain),
+func New(chain *handler.Chain) *Dispatcher {
+	return &Dispatcher{chain: chain}
+}
+
+// Dispatch — BlockEvent'ı handler zincirine iletir.
+func (d *Dispatcher) Dispatch(event model.BlockEvent) {
+	if err := d.chain.Handle(event); err != nil {
+		// Chain kendi içinde hataları loglar, buraya ulaşmamalı
+		_ = err
 	}
-}
-
-func (d *Dispatcher) WithHandler(decision policy.Decision, chain *handler.Chain) *Dispatcher {
-	d.chains[decision] = chain
-	return d
-}
-
-func (d *Dispatcher) Dispatch(decision policy.Decision, conn model.Connection) error {
-	chain, ok := d.chains[decision]
-	if !ok {
-		return nil
-	}
-	return chain.Handle(conn)
 }

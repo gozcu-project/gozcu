@@ -2,23 +2,11 @@ package handler
 
 import "github.com/gozcu-project/gozcu/internal/netmon/model"
 
-type Handler interface {
-	Handle(conn model.Connection) error
-}
-
-type Chain struct {
-	handlers []Handler
-}
-
-func NewChain(handlers ...Handler) *Chain {
-	return &Chain{handlers: handlers}
-}
-
-func (c *Chain) Handle(conn model.Connection) error {
-	for _, h := range c.handlers {
-		if err := h.Handle(conn); err != nil {
-			return err
-		}
-	}
-	return nil
+// EventHandler — bir BlockEvent'ı işleyen sözleşme.
+// Chain of Responsibility: her handler kendi işini yapar,
+// sonra zincirdeki bir sonraki handler'a iletir.
+// Alert gönderme başarısızlığı enforcement'ı etkilemez —
+// handler hataları zinciri durdurmaz, loglanır.
+type EventHandler interface {
+	Handle(event model.BlockEvent) error
 }

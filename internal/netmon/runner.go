@@ -7,44 +7,33 @@ import (
 	"syscall"
 
 	"github.com/cilium/ebpf/ringbuf"
-	"github.com/cilium/ebpf/rlimit"
 
 	"github.com/gozcu-project/gozcu/internal/netmon/bpf"
 	"github.com/gozcu-project/gozcu/internal/netmon/dispatcher"
 	"github.com/gozcu-project/gozcu/internal/netmon/parser"
-	"github.com/gozcu-project/gozcu/internal/netmon/policy"
 )
 
+// Runner — ringbuf event döngüsünü yöneten bileşen.
+// Tek sorumluluğu: ringbuf'tan raw event oku → parse et → dispatch et.
+// Policy sync, map management, alert retry Runner'ın sorumluluğunda değil.
 type Runner struct {
-	policy     policy.Policy
+	objs       *bpf.Objects
+	links      []interface{ Close() error }
 	dispatcher *dispatcher.Dispatcher
-	parser     *parser.EBPFParser
+	parser     *parser.BlockEventParser
 }
 
+// Run — event döngüsünü başlatır, SIGINT/SIGTERM ile durur.
 func (r *Runner) Run() error {
-	if err := rlimit.RemoveMemlock(); err != nil {
-		return err
-	}
+	maps := r.objs.Maps()
 
-	objs, err := bpf.LoadObjects()
-	if err != nil {
-		return err
-	}
-	defer objs.Close()
-
-	tp, err := objs.AttachTracepoint()
-	if err != nil {
-		return err
-	}
-	defer tp.Close()
-
-	rd, err := ringbuf.NewReader(objs.Events().Events)
+	rd, err := ringbuf.NewReader(maps.BlockEvents)
 	if err != nil {
 		return err
 	}
 	defer rd.Close()
 
-	log.Println("gozcu-netmon başladı, network olayları izleniyor...")
+	log.Println("[runner] gozcu-netmon başladı, enforcement aktif")
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
@@ -59,16 +48,24 @@ func (r *Runner) Run() error {
 			if err == ringbuf.ErrClosed {
 				return nil
 			}
-			log.Printf("ring buffer okuma hatası: %v", err)
+			log.Printf("[runner] ringbuf okuma hatası: %v", err)
 			continue
 		}
 
-		conn, err := r.parser.Parse(record.RawSample)
+		event, err := r.parser.Parse(record.RawSample)
 		if err != nil {
+			log.Printf("[runner] event parse hatası: %v", err)
 			continue
 		}
 
-		decision := r.policy.Evaluate(conn)
-		_ = r.dispatcher.Dispatch(decision, conn)
+		r.dispatcher.Dispatch(event)
 	}
+}
+
+// Close — BPF kaynaklarını serbest bırakır.
+func (r *Runner) Close() {
+	for _, l := range r.links {
+		l.Close()
+	}
+	r.objs.Close()
 }
