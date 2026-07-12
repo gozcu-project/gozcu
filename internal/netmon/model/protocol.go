@@ -1,16 +1,6 @@
 package model
 
-import "net"
-
-type Connection struct {
-	PID     uint32
-	UID     uint32
-	Comm    string
-	DestIP  net.IP
-	DstPort uint16
-	Proto   Protocol
-}
-
+// Protocol — tip-güvenli ağ protokolü tanımı.
 type Protocol uint8
 
 const (

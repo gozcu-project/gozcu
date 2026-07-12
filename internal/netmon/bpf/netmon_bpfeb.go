@@ -8,40 +8,60 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"structs"
 
 	"github.com/cilium/ebpf"
 )
+
+type NetmonWhitelistKey struct {
+	_         structs.HostLayout
+	PrefixLen uint32
+	Ip        uint32
+}
+
+type NetmonWhitelistValue struct {
+	_         structs.HostLayout
+	Ports     [16]uint16
+	PortCount uint8
+	_         [1]byte
+}
 
 // Names of all BPF objects in the ELF.
 //
 // Used for safe lookups in a Collection or CollectionSpec.
 const (
-	netmonMapEvents        = "events"
-	netmonProgTraceConnect = "trace_connect"
+	NetmonMapActiveMap      = "active_map"
+	NetmonMapBlockEvents    = "block_events"
+	NetmonMapDropCounter    = "drop_counter"
+	NetmonMapPolicyVersion  = "policy_version"
+	NetmonMapWhitelistA     = "whitelist_a"
+	NetmonMapWhitelistB     = "whitelist_b"
+	NetmonProgGozcuConnect4 = "gozcu_connect4"
+	NetmonProgGozcuConnect6 = "gozcu_connect6"
 )
 
-// loadNetmon returns the embedded CollectionSpec for netmon.
-func loadNetmon() (*ebpf.CollectionSpec, error) {
+// LoadNetmon returns the embedded CollectionSpec for Netmon.
+func LoadNetmon() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_NetmonBytes)
 	spec, err := ebpf.LoadCollectionSpecFromReader(reader)
 	if err != nil {
-		return nil, fmt.Errorf("can't load netmon: %w", err)
+		return nil, fmt.Errorf("can't load Netmon: %w", err)
 	}
 
 	return spec, err
 }
 
-// loadNetmonObjects loads netmon and converts it into a struct.
+// LoadNetmonObjects loads Netmon and converts it into a struct.
 //
 // The following types are suitable as obj argument:
 //
-//	*netmonObjects
-//	*netmonPrograms
-//	*netmonMaps
+//	*NetmonObjects
+//	*NetmonPrograms
+//	*NetmonMaps
 //
 // See ebpf.CollectionSpec.LoadAndAssign documentation for details.
-func loadNetmonObjects(obj any, opts *ebpf.CollectionOptions) error {
-	spec, err := loadNetmon()
+func LoadNetmonObjects(obj any, opts *ebpf.CollectionOptions) error {
+	spec, err := LoadNetmon()
 	if err != nil {
 		return err
 	}
@@ -49,80 +69,98 @@ func loadNetmonObjects(obj any, opts *ebpf.CollectionOptions) error {
 	return spec.LoadAndAssign(obj, opts)
 }
 
-// netmonSpecs contains maps and programs before they are loaded into the kernel.
+// NetmonSpecs contains maps and programs before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
-type netmonSpecs struct {
-	netmonProgramSpecs
-	netmonMapSpecs
-	netmonVariableSpecs
+type NetmonSpecs struct {
+	NetmonProgramSpecs
+	NetmonMapSpecs
+	NetmonVariableSpecs
 }
 
-// netmonProgramSpecs contains programs before they are loaded into the kernel.
+// NetmonProgramSpecs contains programs before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
-type netmonProgramSpecs struct {
-	TraceConnect *ebpf.ProgramSpec `ebpf:"trace_connect"`
+type NetmonProgramSpecs struct {
+	GozcuConnect4 *ebpf.ProgramSpec `ebpf:"gozcu_connect4"`
+	GozcuConnect6 *ebpf.ProgramSpec `ebpf:"gozcu_connect6"`
 }
 
-// netmonMapSpecs contains maps before they are loaded into the kernel.
+// NetmonMapSpecs contains maps before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
-type netmonMapSpecs struct {
-	Events *ebpf.MapSpec `ebpf:"events"`
+type NetmonMapSpecs struct {
+	ActiveMap     *ebpf.MapSpec `ebpf:"active_map"`
+	BlockEvents   *ebpf.MapSpec `ebpf:"block_events"`
+	DropCounter   *ebpf.MapSpec `ebpf:"drop_counter"`
+	PolicyVersion *ebpf.MapSpec `ebpf:"policy_version"`
+	WhitelistA    *ebpf.MapSpec `ebpf:"whitelist_a"`
+	WhitelistB    *ebpf.MapSpec `ebpf:"whitelist_b"`
 }
 
-// netmonVariableSpecs contains global variables before they are loaded into the kernel.
+// NetmonVariableSpecs contains global variables before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
-type netmonVariableSpecs struct {
+type NetmonVariableSpecs struct {
 }
 
-// netmonObjects contains all objects after they have been loaded into the kernel.
+// NetmonObjects contains all objects after they have been loaded into the kernel.
 //
-// It can be passed to loadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
-type netmonObjects struct {
-	netmonPrograms
-	netmonMaps
-	netmonVariables
+// It can be passed to LoadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
+type NetmonObjects struct {
+	NetmonPrograms
+	NetmonMaps
+	NetmonVariables
 }
 
-func (o *netmonObjects) Close() error {
+func (o *NetmonObjects) Close() error {
 	return _NetmonClose(
-		&o.netmonPrograms,
-		&o.netmonMaps,
+		&o.NetmonPrograms,
+		&o.NetmonMaps,
 	)
 }
 
-// netmonMaps contains all maps after they have been loaded into the kernel.
+// NetmonMaps contains all maps after they have been loaded into the kernel.
 //
-// It can be passed to loadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
-type netmonMaps struct {
-	Events *ebpf.Map `ebpf:"events"`
+// It can be passed to LoadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
+type NetmonMaps struct {
+	ActiveMap     *ebpf.Map `ebpf:"active_map"`
+	BlockEvents   *ebpf.Map `ebpf:"block_events"`
+	DropCounter   *ebpf.Map `ebpf:"drop_counter"`
+	PolicyVersion *ebpf.Map `ebpf:"policy_version"`
+	WhitelistA    *ebpf.Map `ebpf:"whitelist_a"`
+	WhitelistB    *ebpf.Map `ebpf:"whitelist_b"`
 }
 
-func (m *netmonMaps) Close() error {
+func (m *NetmonMaps) Close() error {
 	return _NetmonClose(
-		m.Events,
+		m.ActiveMap,
+		m.BlockEvents,
+		m.DropCounter,
+		m.PolicyVersion,
+		m.WhitelistA,
+		m.WhitelistB,
 	)
 }
 
-// netmonVariables contains all global variables after they have been loaded into the kernel.
+// NetmonVariables contains all global variables after they have been loaded into the kernel.
 //
-// It can be passed to loadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
-type netmonVariables struct {
+// It can be passed to LoadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
+type NetmonVariables struct {
 }
 
-// netmonPrograms contains all programs after they have been loaded into the kernel.
+// NetmonPrograms contains all programs after they have been loaded into the kernel.
 //
-// It can be passed to loadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
-type netmonPrograms struct {
-	TraceConnect *ebpf.Program `ebpf:"trace_connect"`
+// It can be passed to LoadNetmonObjects or ebpf.CollectionSpec.LoadAndAssign.
+type NetmonPrograms struct {
+	GozcuConnect4 *ebpf.Program `ebpf:"gozcu_connect4"`
+	GozcuConnect6 *ebpf.Program `ebpf:"gozcu_connect6"`
 }
 
-func (p *netmonPrograms) Close() error {
+func (p *NetmonPrograms) Close() error {
 	return _NetmonClose(
-		p.TraceConnect,
+		p.GozcuConnect4,
+		p.GozcuConnect6,
 	)
 }
 
